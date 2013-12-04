@@ -17,11 +17,52 @@ class PatentsAnalyzer {
         'inventors',
         'publication date',
         'filing date',
-        'international classes'
+        'international classes',
+        'assignee'
     );
 
     public function __construct($filesPath = null) {
         $this->filesPath = $filesPath;
+    }
+
+    private function getLocation($locationText) {
+        $result = '<location>';
+        $location = explode(',', trim(str_replace(')', '', $locationText)));
+        $result.='<city>' . $location[0] . '</city>';
+        if (count($location) > 2) {
+            $result.='<state>' . trim($location[1]) . '</state>';
+            $result.='<country>' . trim($location[2]) . '</country>';
+        } else {
+            $result.='<country>' . trim($location[1]) . '</country>';
+        }
+        $result .= '</location>';
+        return $result;
+    }
+
+    private function getInventors($inventors) {
+        $inventors = explode("\n", $inventors);
+        $result = '';
+        foreach ($inventors as $inventor) {
+            $result.='<inventor>';
+            $inventor = explode('(', $inventor);
+            $result.='<name>' . trim($inventor[0]) . '</name>';
+            $result.= $this->getLocation($inventor[1]);
+            $result.='</inventor>';
+        }
+        return $result;
+    }
+
+    private function getAssignees($assignees) {
+        $assignees = explode("\n", $assignees);
+        $result = '';
+        foreach($assignees as $assignee){
+            $result.='<assignee>';
+            $assignee=explode('(',$assignee);
+            $result.='<name>'.trim($assignee[0]).'</name>';
+            $result.=$this->getLocation($assignee[1]);
+            $result.='</assignee>';
+        }
+        return $result;
     }
 
     private function getFileContents($content) {
@@ -61,10 +102,17 @@ class PatentsAnalyzer {
             $fileContents = $this->getFileContents($content);
             fputs($resultFile, '<patent>');
             foreach (self::$fields as $field) {
-                $tag = str_replace(' ', '_', $field);
-                fputs($resultFile, '<' . $tag . '>');
-                fputs($resultFile, $fileContents[$field]);
-                fputs($resultFile, '</' . $tag . '>' . "\n");
+                if (isset($fileContents[$field])) {
+                    $tag = str_replace(' ', '_', $field);
+                    if ($field == 'inventors') {
+                        $fileContents[$field] = $this->getInventors($fileContents[$field]);
+                    }else if ($field == 'assignee') {
+                        $fileContents[$field] = $this->getAssignees($fileContents[$field]);
+                    }
+                    fputs($resultFile, '<' . $tag . '>');
+                    fputs($resultFile, $fileContents[$field]);
+                    fputs($resultFile, '</' . $tag . '>' . "\n");
+                }
             }
 
             fputs($resultFile, "</patent>\n");
