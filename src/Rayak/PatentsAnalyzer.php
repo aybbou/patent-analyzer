@@ -55,11 +55,14 @@ class PatentsAnalyzer {
     private function getAssignees($assignees) {
         $assignees = explode("\n", $assignees);
         $result = '';
-        foreach($assignees as $assignee){
+        foreach ($assignees as $assignee) {
             $result.='<assignee>';
-            $assignee=explode('(',$assignee);
-            $result.='<name>'.trim($assignee[0]).'</name>';
-            $result.=$this->getLocation($assignee[1]);
+            $assignee = explode('(', $assignee);
+            $result.='<name>' . htmlspecialchars(trim($assignee[0])) . '</name>';
+            if (count($assignee) != 2) {
+                var_dump($assignee);
+            }
+            $result.=$this->getLocation($assignee[count($assignee) - 1]);
             $result.='</assignee>';
         }
         return $result;
@@ -106,21 +109,26 @@ class PatentsAnalyzer {
                     $tag = str_replace(' ', '_', $field);
                     if ($field == 'inventors') {
                         $fileContents[$field] = $this->getInventors($fileContents[$field]);
-                    }else if ($field == 'assignee') {
+                    } else if ($field == 'assignee') {
                         $fileContents[$field] = $this->getAssignees($fileContents[$field]);
+                    } else {
+                        $fileContents[$field] = htmlspecialchars($fileContents[$field]);
+                    }
+                    if ($tag == 'assignee') {
+                        $tag = 'assignees';
                     }
                     fputs($resultFile, '<' . $tag . '>');
                     fputs($resultFile, $fileContents[$field]);
                     fputs($resultFile, '</' . $tag . '>' . "\n");
                 }
             }
-
+            fputs($resultFile, '<id>' . $c . '</id>');
             fputs($resultFile, "</patent>\n");
 
             $fileName = $file->getRelativePathname();
             echo "traitement du fichier $fileName\n";
             $c++;
-            if ($c == 10) {
+            if ($c == 300) {
                 break;
             }
         }
