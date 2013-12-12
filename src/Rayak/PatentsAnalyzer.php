@@ -28,13 +28,22 @@ class PatentsAnalyzer {
     private function getLocation($locationText) {
         $result = '<location>';
         $location = explode(',', trim(str_replace(')', '', $locationText)));
-        $result.='<city>' . $location[0] . '</city>';
-        if (count($location) > 2) {
-            $result.='<state>' . trim($location[1]) . '</state>';
-            $result.='<country>' . trim($location[2]) . '</country>';
-        } else {
-            $result.='<country>' . trim($location[1]) . '</country>';
+
+        switch (count($location)) {
+            case 1:
+                $result.= '<country>' . $location[0] . '</country>';
+                break;
+            case 2:
+                $result.= '<city>' . $location[0] . '</city>';
+                $result.= '<country>' . $location[1] . '</country>';
+                break;
+            case 3:
+                $result.='<city>' . $location[0] . '</city>';
+                $result.='<state>' . trim($location[1]) . '</state>';
+                $result.='<country>' . trim($location[2]) . '</country>';
+                break;
         }
+
         $result .= '</location>';
         return $result;
     }
@@ -59,9 +68,6 @@ class PatentsAnalyzer {
             $result.='<assignee>';
             $assignee = explode('(', $assignee);
             $result.='<name>' . htmlspecialchars(trim($assignee[0])) . '</name>';
-            if (count($assignee) != 2) {
-                var_dump($assignee);
-            }
             $result.=$this->getLocation($assignee[count($assignee) - 1]);
             $result.='</assignee>';
         }
@@ -126,11 +132,8 @@ class PatentsAnalyzer {
             fputs($resultFile, "</patent>\n");
 
             $fileName = $file->getRelativePathname();
-            echo "traitement du fichier $fileName\n";
+            echo "Analizing $fileName...\n";
             $c++;
-            if ($c == 300) {
-                break;
-            }
         }
 
         fputs($resultFile, "\n</patents>");
