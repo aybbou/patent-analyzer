@@ -30,6 +30,8 @@ class PatentsAnalyzer {
         $location = explode(',', trim(str_replace(')', '', $locationText)));
 
         switch (count($location)) {
+            case 0:
+                $result.='<country></country>';
             case 1:
                 $result.= '<country>' . $location[0] . '</country>';
                 break;
@@ -55,7 +57,9 @@ class PatentsAnalyzer {
             $result.='<inventor>';
             $inventor = explode('(', $inventor);
             $result.='<name>' . trim($inventor[0]) . '</name>';
-            $result.= $this->getLocation($inventor[1]);
+            if (count($inventor) > 1) {
+                $result.= $this->getLocation($inventor[1]);
+            }
             $result.='</inventor>';
         }
         return $result;
@@ -68,7 +72,9 @@ class PatentsAnalyzer {
             $result.='<assignee>';
             $assignee = explode('(', $assignee);
             $result.='<name>' . htmlspecialchars(trim($assignee[0])) . '</name>';
-            $result.=$this->getLocation($assignee[count($assignee) - 1]);
+            if (count($assignee) > 1) {
+                $result.=$this->getLocation($assignee[count($assignee) - 1]);
+            }
             $result.='</assignee>';
         }
         return $result;
